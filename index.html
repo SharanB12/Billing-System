@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Shoe Mart</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+</head>
+<body>
+  <div id="app">
+    <header>
+      <img src="https://fausto.in/cdn/shop/products/FST_FOBWC-1503_GOLDEN_1-1_MOOD_6611f676-23f5-4eb0-bd7b-c527c4123b70_400x.jpg?v=1679576984" class="logo" alt="GS Shoe Mart Logo">
+      <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+    <h1>Shoe Mart</h1>
+    <nav>
+      <button class="menu-button" onclick="showSection('reports')">Sales Report</button>
+      <button class="menu-button" onclick="showSection('billing')">Billing</button>
+      <button class="menu-button" onclick="showSection('inventory')">Inventory</button>
+    </nav>
+  </div>
+    </header>
+    <main>
+      <section id="reports_section" class="section hidden">
+        <h2>Sales Report</h2>
+        <div class="report-period">
+          <button class="filter-button" onclick="calcReport('daily')">Today</button>
+          <button class="filter-button" onclick="calcReport('monthly')">This Month</button>
+          <button class="filter-button" onclick="calcReport('yearly')">This Year</button>
+        <select id="chartTypeSelector" onchange="updateDynamicChart()">
+          <option value="">Filters</option>
+          <option value="totalSalesProduct">Total Sales by Product</option>
+          <option value="salesOverTime">Sales Over Time</option>
+          <option value="stockMovement">Stock Movement</option>
+          <option value="topSellersOverTime">Top Sellers Over Time</option>
+          <option value="cumulativeSales">Cumulative Sales</option>
+        </select>
+        <button class="filter-button" onclick="clearSalesLog()" style="margin-top:15px;background:#ff3b3b;">🗑️ Clear Sales History</button>
+        </div>
+        <div class="dashboard-grid">
+        <div class="card" id="total-sales">₹0.00</div>
+        <div class="card" id="top-seller">Top Seller: N/A</div>
+        <div class="card" id="total-units">Total Units Sold: 0</div>
+        </div>
+        <canvas id="dynamicChart" style="max-height: 300px; margin-top: 30px;"></canvas>
+      </section>
+
+      <section id="billing_section" class="section">
+        <!-- Billing UI -->
+        <h2>Billing</h2>
+        <input id="prod-code" placeholder="Shoe Name or Code" oninput="lookupProduct(this.value)" />
+        <input id="prod-name" placeholder="Name" disabled />
+        <input id="prod-price" placeholder="Price (₹)" disabled />
+        <input id="prod-qty" type="number" min="1" placeholder="Qty" />
+        <button class="filter-button" onclick="addToCart()">Add to Cart</button>
+        <input id="cust-name" placeholder="Customer Name" />
+        <input id="cust-phone" placeholder="Customer Mobile" />
+        
+        <!-- cart listing -->
+        <table id="cart">
+          <thead><tr><th>Name</th><th>Price</th><th>Qty</th><th>Total</th><th>Action</th></tr></thead>
+          <tbody></tbody>
+          <button class="filter-button" onclick="generateBill()">Generate PDF Bill</button>
+        </table>
+      </section>
+
+      <section id="inventory_section" class="section hidden">
+        <h2>Inventory</h2>
+        <h3>Add / Update Shoe</h3>
+        <input id="inv-name" placeholder="Name or Code" />
+        <input id="inv-price" type="number" placeholder="Price (₹)" />
+        <input id="inv-qty" type="number" placeholder="Quantity in stock" />
+        <button class="filter-button" onclick="addInventory()">Save</button>
+        <p id="inv-msg" class="success"></p>
+
+        <h3>Current Stock</h3>
+        <table id="inv-table">
+  <thead>
+    <tr>
+      <th>Name</th><th>Price</th><th>Stock</th><th>Action</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+      </section>
+    </main>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+:root {
+  --bg-glass: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.93);
+  --box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --main-color: #1f1c2c;         /* Deep violet */
+  --secondary-color: #928dab;    /* Soft lavender */
+  --accent-color: #ff7e5f;       /* Coral highlight */
+}
+
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+body {
+  background: linear-gradient(to right, var(--main-color), var(--secondary-color));
+  min-height: 100vh;
+  padding: 20px;
+  color: white;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  padding: 12px 20px;
+  box-shadow: var(--box-shadow);
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+header h1 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-left: 15px;
+  color: var(--accent-color);
+}
+
+
+.page, .section {
+  background: var(--bg-glass);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--glass-border);
+}
+
+input {
+  width: 22%;
+  transition: all 0.3s ease;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  margin: 5px 0;
+  font-size: 0.95rem;
+}
+
+input {
+  background: rgb(255, 255, 255);
+  color: #080125;
+}
+
+input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.537);
+}
+
+button {
+  background: var(--accent-color);
+  color: #fff;
+}
+
+button:hover {
+  background: #ff9472;
+  transform: translateY(-2px);
+}
+
+table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+  background: rgba(255,255,255,0.2);
+  color: white;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+
+.hidden {
+  display: none;
+}
+
+.error {
+  color: #ff4444;
+}
+
+.success {
+  color: #00ff88;
+}
+
+
+.report-period button.active {
+  background: var(--secondary-color);
+  font-weight: bold;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#report_output ul {
+  list-style: disc;
+  padding-left: 25px;
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+
+
+.menu-button {
+  padding: 10px 22px;
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 8px 10px 8px 0;
+  transition: 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.menu-button:hover {
+  background: #ff9472;
+  transform: translateY(-2px);
+}
+
+.menu-button.active {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.filter-button {
+  padding: 10px 22px;
+  background: var(--accent-color);
+  color: #fff;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 8px 10px 8px 0;
+  transition: 0.3s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.filter-button:hover {
+  background: #ff9472;
+  transform: translateY(-2px);
+}
+
+.filter-button.active {
+  background: var(--secondary-color);
+  color: white;
+}
+
+.action-btn {
+  padding: 6px 14px;
+  margin: 2px;
+  font-size: 0.85rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-btn {
+  background-color: #4caf50; /* Green */
+}
+
+.edit-btn:hover {
+  background-color: #45a049;
+}
+
+.delete-btn {
+  background-color: #e53935; /* Red */
+}
+
+.delete-btn:hover {
+  background-color: #c62828;
+}
+
+.dashboard-grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.card {
+  flex: 1 1 200px;
+  padding: 20px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  box-shadow: var(--box-shadow);
+  text-align: center;
+  font-size: 1.1rem;
+  backdrop-filter: blur(8px);
+}
+
+#chartTypeSelector {
+  padding: 10px 15px;
+  border-radius: 10px;
+  border: none;
+  font-weight: bold;
+  background: var(--accent-color);
+  color: #fff;
+}
