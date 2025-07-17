@@ -244,11 +244,6 @@ canvas {
   width: 100% !important;
   height: 300px !important;
 }
-@media (max-width: 768px) {
-  canvas {
-    height: 250px !important;
-  }
-}
 
 #chartTypeSelector {
   padding: 10px 15px;
