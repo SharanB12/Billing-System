@@ -455,6 +455,92 @@ function chartOptions(label) {
 }
 
 
+async function renderAllCharts() {
+  const snapshot = await getDocs(query(salesRef, orderBy("date")));
+  const data = [];
+
+  snapshot.forEach(doc => {
+    const d = doc.data();
+    const date = d.date.toDate ? d.date.toDate() : new Date(d.date);
+    data.push({
+      name: d.name,
+      price: d.price,
+      qty: d.qty,
+      customer: d.customer || "Unknown",
+      date: date
+    });
+  });
+
+  // Grouped Calculations
+  const revenueByDate = {};
+  const revenueByProduct = {};
+  const qtyByProduct = {};
+  const revenueByMonth = {};
+  const revenueCumulative = [];
+  const labelsCumulative = [];
+  const revenueByCustomer = {};
+  const stockByProduct = {}; // optional if you integrate with inventory later
+
+  let total = 0;
+  data.sort((a, b) => new Date(a.date) - new Date(b.date));
+  data.forEach((sale) => {
+    const dateStr = sale.date.toISOString().split("T")[0];
+    const monthStr = `${sale.date.getFullYear()}-${String(sale.date.getMonth() + 1).padStart(2, "0")}`;
+    const revenue = sale.qty * sale.price;
+
+    revenueByDate[dateStr] = (revenueByDate[dateStr] || 0) + revenue;
+    revenueByProduct[sale.name] = (revenueByProduct[sale.name] || 0) + revenue;
+    qtyByProduct[sale.name] = (qtyByProduct[sale.name] || 0) + sale.qty;
+    revenueByMonth[monthStr] = (revenueByMonth[monthStr] || 0) + revenue;
+    revenueByCustomer[sale.customer] = (revenueByCustomer[sale.customer] || 0) + revenue;
+
+    total += revenue;
+    labelsCumulative.push(dateStr);
+    revenueCumulative.push(total);
+  });
+
+  const makeChart = (id, type, labels, datasetLabel, data) => {
+    const ctx = document.getElementById(id).getContext("2d");
+    return new Chart(ctx, {
+      type: type,
+      data: {
+        labels: labels,
+        datasets: [{
+          label: datasetLabel,
+          data: data,
+          backgroundColor: "#ff7e5f",
+          borderColor: "#ff7e5f",
+          borderWidth: 2,
+          fill: type === "line",
+          tension: 0.3
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+          tooltip: { callbacks: { label: ctx => `₹${ctx.parsed.y}` } }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { color: "#fff" }
+          },
+          x: {
+            ticks: { color: "#fff" }
+          }
+        }
+      }
+    });
+  };
+
+  makeChart("salesOverTimeChart", "line", Object.keys(revenueByDate), "Sales ₹", Object.values(revenueByDate));
+  makeChart("revenueByProductChart", "bar", Object.keys(revenueByProduct), "Revenue ₹", Object.values(revenueByProduct));
+  makeChart("topSellersChart", "bar", Object.keys(qtyByProduct), "Units Sold", Object.values(qtyByProduct));
+  makeChart("monthlyTrendsChart", "line", Object.keys(revenueByMonth), "Monthly Sales ₹", Object.values(revenueByMonth));
+  makeChart("cumulativeRevenueChart", "line", labelsCumulative, "Cumulative Revenue ₹", revenueCumulative);
+  makeChart("salesPerCustomerChart", "bar", Object.keys(revenueByCustomer), "Customer Spend ₹", Object.values(revenueByCustomer));
+}
 
 
 // ✅ Initialize inventory and section after page load
@@ -462,6 +548,7 @@ window.onload = function () {
    loadInventory();
    showSection('reports');
    calcReport('daily');
+    renderAllCharts(); // 👈 Add this
 };
 
 window.clearSalesLog = async function () {
