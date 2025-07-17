@@ -478,8 +478,6 @@ window.onload = function () {
    calcReport('daily');
 };
 
-import { deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
 window.clearSalesLog = async function () {
   if (confirm("Are you sure you want to clear all sales history? This cannot be undone.")) {
     const snapshot = await getDocs(salesRef);
