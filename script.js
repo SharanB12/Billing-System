@@ -273,9 +273,6 @@ async function calcReport(period) {
 }
 window.calcReport = calcReport;
 
-
-window.calcReport = calcReport;
-
 // ------------------- Init -----------------------
 
 let dynamicChart;
