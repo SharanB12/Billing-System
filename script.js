@@ -291,17 +291,25 @@ window.calcReport = calcReport;
 
 let dynamicChart;
 
-function updateDynamicChart() {
+window.updateDynamicChart = async function () {
   const type = document.getElementById('chartTypeSelector').value;
   if (dynamicChart) dynamicChart.destroy();
 
   const ctx = document.getElementById('dynamicChart').getContext('2d');
+
+  const snapshot = await getDocs(query(salesRef, orderBy("date")));
+  const salesLog = [];
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const date = data.date.toDate ? data.date.toDate() : new Date(data.date);
+    salesLog.push({ ...data, date });
+  });
+
   const now = new Date();
   const dailyStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const monthlyStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const yearlyStart = new Date(now.getFullYear(), 0, 1);
-
-  const filteredSales = salesLog.filter(it => it.date >= yearlyStart); // default for yearly
+  const filteredSales = salesLog.filter(it => it.date >= yearlyStart);
 
   if (type === 'totalSalesProduct') {
     const revenueMap = {};
@@ -330,18 +338,15 @@ function updateDynamicChart() {
       timeLabels[label] = (timeLabels[label] || 0) + it.price * it.qty;
     });
 
-    const labels = Object.keys(timeLabels);
-    const data = Object.values(timeLabels);
-
     dynamicChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: labels,
+        labels: Object.keys(timeLabels),
         datasets: [{
           label: 'Sales (₹)',
-          data: data,
-          backgroundColor: 'rgba(255,126,95,0.2)',
+          data: Object.values(timeLabels),
           borderColor: '#ff7e5f',
+          backgroundColor: 'rgba(255,126,95,0.2)',
           fill: true,
           tension: 0.3
         }]
@@ -351,13 +356,22 @@ function updateDynamicChart() {
 
   } else if (type === 'stockMovement') {
     const sold = {};
-    for (let s of salesLog) {
+    for (let s of filteredSales) {
       sold[s.name] = (sold[s.name] || 0) + s.qty;
     }
 
-    const names = Object.keys(inventory);
-    const openingStock = names.map(n => inventory[n].stock + (sold[n] || 0));
-    const soldStock = names.map(n => sold[n] || 0);
+    const inventorySnapshot = await getDocs(inventoryRef);
+    const names = [];
+    const openingStock = [];
+    const soldStock = [];
+
+    inventorySnapshot.forEach(doc => {
+      const name = doc.id;
+      const data = doc.data();
+      names.push(name);
+      openingStock.push(data.stock + (sold[name] || 0));
+      soldStock.push(sold[name] || 0);
+    });
 
     dynamicChart = new Chart(ctx, {
       type: 'bar',
@@ -382,7 +396,7 @@ function updateDynamicChart() {
   } else if (type === 'topSellersOverTime') {
     const sellerMap = {};
     filteredSales.forEach(it => {
-      const key = `${it.date.getFullYear()}-${it.date.getMonth()+1}`;
+      const key = `${it.date.getFullYear()}-${it.date.getMonth() + 1}`;
       sellerMap[key] = (sellerMap[key] || 0) + it.qty;
     });
 
@@ -394,21 +408,21 @@ function updateDynamicChart() {
           label: 'Top Sellers Quantity',
           data: Object.values(sellerMap),
           borderColor: '#ff7e5f',
-          tension: 0.4,
-          fill: false
+          fill: false,
+          tension: 0.4
         }]
       },
       options: chartOptions('Qty')
     });
 
   } else if (type === 'cumulativeSales') {
-    const salesSorted = [...salesLog].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const salesSorted = [...filteredSales].sort((a, b) => new Date(a.date) - new Date(b.date));
     let total = 0;
     const cumulative = salesSorted.map(s => {
       total += s.qty * s.price;
       return total;
     });
-    const labels = salesSorted.map(s => `${s.date.getFullYear()}-${s.date.getMonth()+1}-${s.date.getDate()}`);
+    const labels = salesSorted.map(s => `${s.date.getFullYear()}-${s.date.getMonth() + 1}-${s.date.getDate()}`);
 
     dynamicChart = new Chart(ctx, {
       type: 'line',
@@ -425,7 +439,7 @@ function updateDynamicChart() {
       options: chartOptions('₹ Revenue')
     });
   }
-}
+};
 
 function chartOptions(label) {
   return {
@@ -434,7 +448,7 @@ function chartOptions(label) {
       legend: {
         display: true,
         labels: {
-          color: '#ffffff' // ✅ legend text color
+          color: '#ffffff'
         }
       },
       tooltip: {
@@ -453,6 +467,7 @@ function chartOptions(label) {
     }
   };
 }
+
 
 
 
