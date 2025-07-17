@@ -91,10 +91,19 @@ window.deleteInventory = async function(name) {
 // ---------------------- Billing ------------------------
 
 window.lookupProduct = async function(val) {
-  const docSnap = await getDoc(doc(inventoryRef, val));
-  if (docSnap.exists()) {
-    document.getElementById("prod-name").value = val;
-    document.getElementById("prod-price").value = docSnap.data().price;
+  if (!val) {
+    document.getElementById("prod-name").value = "";
+    document.getElementById("prod-price").value = "";
+    return;
+  }
+
+  const snapshot = await getDocs(inventoryRef);
+  const match = snapshot.docs.find(doc => doc.id.toLowerCase() === val.toLowerCase());
+
+  if (match) {
+    const data = match.data();
+    document.getElementById("prod-name").value = match.id;
+    document.getElementById("prod-price").value = data.price;
   } else {
     document.getElementById("prod-name").value = "";
     document.getElementById("prod-price").value = "";
@@ -222,18 +231,20 @@ window.generateBill = async function () {
 let salesChart = null;
 
 async function calcReport(period) {
-  document.querySelectorAll(".report-period button").forEach(btn => btn.classList.remove("active"));
-  document.querySelector(`.report-period button[onclick*="${period}"]`)?.classList.add("active");
+  document.querySelectorAll('.report-period button')
+    .forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.report-period button[onclick*="${period}"]`)
+    ?.classList.add('active');
 
   const now = new Date();
   let from;
-  if (period === "daily") from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  if (period === "monthly") from = new Date(now.getFullYear(), now.getMonth(), 1);
-  if (period === "yearly") from = new Date(now.getFullYear(), 0, 1);
+  if (period === 'daily')   from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  if (period === 'monthly') from = new Date(now.getFullYear(), now.getMonth(), 1);
+  if (period === 'yearly')  from = new Date(now.getFullYear(), 0, 1);
 
-  const q = query(salesRef, orderBy("date"));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(query(salesRef, orderBy("date")));
   const filtered = [];
+
   snapshot.forEach(doc => {
     const data = doc.data();
     const date = data.date.toDate ? data.date.toDate() : new Date(data.date);
@@ -242,6 +253,7 @@ async function calcReport(period) {
 
   const total = filtered.reduce((sum, it) => sum + it.price * it.qty, 0);
   const unitsSold = filtered.reduce((sum, it) => sum + it.qty, 0);
+
   const tally = {};
   filtered.forEach(it => {
     tally[it.name] = (tally[it.name] || 0) + it.qty;
@@ -249,41 +261,18 @@ async function calcReport(period) {
 
   const sorted = Object.entries(tally).sort((a, b) => b[1] - a[1]);
   const topItem = sorted[0] || ["N/A", 0];
+  const top5 = sorted.slice(0, 5);
 
-  document.getElementById("total-sales").textContent = `₹${total.toFixed(2)}`;
-  document.getElementById("top-seller").textContent = `Top Seller: ${topItem[0]} (${topItem[1]} units)`;
-  document.getElementById("total-units").textContent = `Total Units Sold: ${unitsSold}`;
+  // Update cards
+  document.getElementById('total-sales').textContent = `₹${total.toFixed(2)}`;
+  document.getElementById('top-seller').textContent = `Top Seller: ${topItem[0]} (${topItem[1]} units)`;
+  document.getElementById('total-units').textContent = `Total Units Sold: ${unitsSold}`;
 
-  if (salesChart) salesChart.destroy();
-
-  const ctx = document.getElementById("salesChart").getContext("2d");
-  salesChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: sorted.map(([name]) => name),
-      datasets: [{
-        label: "Units Sold",
-        data: sorted.map(([, qty]) => qty),
-        backgroundColor: "#ff7e5f",
-        borderRadius: 8
-      }]
-    },
-    options: {
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (context) => `${context.parsed.y} units`
-          }
-        }
-      },
-      scales: {
-        y: { beginAtZero: true, ticks: { color: "#fff" } },
-        x: { ticks: { color: "#fff" } }
-      }
-    }
-  });
+  // Optional: Log best sellers in console
+  console.table(top5.map(([n, q]) => ({ Product: n, Quantity: q })));
 }
+window.calcReport = calcReport;
+
 
 window.calcReport = calcReport;
 
