@@ -219,7 +219,12 @@ window.generateBill = async function () {
 
 // ------------------ Reports -------------------
 
+let salesChart = null;
+
 async function calcReport(period) {
+  document.querySelectorAll(".report-period button").forEach(btn => btn.classList.remove("active"));
+  document.querySelector(`.report-period button[onclick*="${period}"]`)?.classList.add("active");
+
   const now = new Date();
   let from;
   if (period === "daily") from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -248,7 +253,38 @@ async function calcReport(period) {
   document.getElementById("total-sales").textContent = `₹${total.toFixed(2)}`;
   document.getElementById("top-seller").textContent = `Top Seller: ${topItem[0]} (${topItem[1]} units)`;
   document.getElementById("total-units").textContent = `Total Units Sold: ${unitsSold}`;
+
+  if (salesChart) salesChart.destroy();
+
+  const ctx = document.getElementById("salesChart").getContext("2d");
+  salesChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: sorted.map(([name]) => name),
+      datasets: [{
+        label: "Units Sold",
+        data: sorted.map(([, qty]) => qty),
+        backgroundColor: "#ff7e5f",
+        borderRadius: 8
+      }]
+    },
+    options: {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.parsed.y} units`
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: "#fff" } },
+        x: { ticks: { color: "#fff" } }
+      }
+    }
+  });
 }
+
 window.calcReport = calcReport;
 
 // ------------------- Init -----------------------
