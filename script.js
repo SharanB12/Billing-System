@@ -478,14 +478,27 @@ window.onload = function () {
    calcReport('daily');
 };
 
-function clearSalesLog() {
+import { deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+window.clearSalesLog = async function () {
   if (confirm("Are you sure you want to clear all sales history? This cannot be undone.")) {
-    salesLog = [];
-    saveData();
-    calcReport('daily');
-    alert('Sales history cleared.');
+    const snapshot = await getDocs(salesRef);
+    const batch = [];
+
+    // Collect all delete promises
+    snapshot.forEach(doc => {
+      batch.push(deleteDoc(doc.ref));
+    });
+
+    // Wait for all deletes to complete
+    await Promise.all(batch);
+
+    alert("Sales history cleared.");
+    calcReport("daily");
+    updateDynamicChart();
   }
-}
+};
+
 
 
 // ✅ Enable "Enter" to submit billing or inventory
