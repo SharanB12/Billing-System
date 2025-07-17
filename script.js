@@ -253,8 +253,208 @@ window.calcReport = calcReport;
 
 // ------------------- Init -----------------------
 
-window.onload = () => {
-  loadInventory();
-  showSection("reports");
-  calcReport("daily");
+let dynamicChart;
+
+function updateDynamicChart() {
+  const type = document.getElementById('chartTypeSelector').value;
+  if (dynamicChart) dynamicChart.destroy();
+
+  const ctx = document.getElementById('dynamicChart').getContext('2d');
+  const now = new Date();
+  const dailyStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const monthlyStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const yearlyStart = new Date(now.getFullYear(), 0, 1);
+
+  const filteredSales = salesLog.filter(it => it.date >= yearlyStart); // default for yearly
+
+  if (type === 'totalSalesProduct') {
+    const revenueMap = {};
+    filteredSales.forEach(it => {
+      revenueMap[it.name] = (revenueMap[it.name] || 0) + it.price * it.qty;
+    });
+
+    dynamicChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(revenueMap),
+        datasets: [{
+          label: 'Revenue (₹)',
+          data: Object.values(revenueMap),
+          backgroundColor: '#ff7e5f',
+          borderRadius: 8
+        }]
+      },
+      options: chartOptions('Revenue (₹)')
+    });
+
+  } else if (type === 'salesOverTime') {
+    const timeLabels = {};
+    filteredSales.forEach(it => {
+      const label = `${it.date.getFullYear()}-${it.date.getMonth()+1}-${it.date.getDate()}`;
+      timeLabels[label] = (timeLabels[label] || 0) + it.price * it.qty;
+    });
+
+    const labels = Object.keys(timeLabels);
+    const data = Object.values(timeLabels);
+
+    dynamicChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Sales (₹)',
+          data: data,
+          backgroundColor: 'rgba(255,126,95,0.2)',
+          borderColor: '#ff7e5f',
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: chartOptions('₹ Revenue')
+    });
+
+  } else if (type === 'stockMovement') {
+    const sold = {};
+    for (let s of salesLog) {
+      sold[s.name] = (sold[s.name] || 0) + s.qty;
+    }
+
+    const names = Object.keys(inventory);
+    const openingStock = names.map(n => inventory[n].stock + (sold[n] || 0));
+    const soldStock = names.map(n => sold[n] || 0);
+
+    dynamicChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: names,
+        datasets: [
+          {
+            label: 'Opening Stock',
+            data: openingStock,
+            backgroundColor: '#4CAF50'
+          },
+          {
+            label: 'Sold Stock',
+            data: soldStock,
+            backgroundColor: '#ff7e5f'
+          }
+        ]
+      },
+      options: chartOptions('Units')
+    });
+
+  } else if (type === 'topSellersOverTime') {
+    const sellerMap = {};
+    filteredSales.forEach(it => {
+      const key = `${it.date.getFullYear()}-${it.date.getMonth()+1}`;
+      sellerMap[key] = (sellerMap[key] || 0) + it.qty;
+    });
+
+    dynamicChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: Object.keys(sellerMap),
+        datasets: [{
+          label: 'Top Sellers Quantity',
+          data: Object.values(sellerMap),
+          borderColor: '#ff7e5f',
+          tension: 0.4,
+          fill: false
+        }]
+      },
+      options: chartOptions('Qty')
+    });
+
+  } else if (type === 'cumulativeSales') {
+    const salesSorted = [...salesLog].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let total = 0;
+    const cumulative = salesSorted.map(s => {
+      total += s.qty * s.price;
+      return total;
+    });
+    const labels = salesSorted.map(s => `${s.date.getFullYear()}-${s.date.getMonth()+1}-${s.date.getDate()}`);
+
+    dynamicChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Cumulative Revenue',
+          data: cumulative,
+          borderColor: '#ff7e5f',
+          fill: false,
+          tension: 0.3
+        }]
+      },
+      options: chartOptions('₹ Revenue')
+    });
+  }
+}
+
+function chartOptions(label) {
+  return {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        labels: {
+          color: '#ffffff' // ✅ legend text color
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (context) => `${context.dataset.label}: ${context.parsed.y} ${label}`
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { color: '#fff' } },
+      y: {
+        beginAtZero: true,
+        ticks: { color: '#fff' },
+        title: { display: true, text: label, color: '#fff' }
+      }
+    }
+  };
+}
+
+
+
+// ✅ Initialize inventory and section after page load
+window.onload = function () {
+   loadInventory();
+   showSection('reports');
+   calcReport('daily');
 };
+
+function clearSalesLog() {
+  if (confirm("Are you sure you want to clear all sales history? This cannot be undone.")) {
+    salesLog = [];
+    saveData();
+    calcReport('daily');
+    alert('Sales history cleared.');
+  }
+}
+
+
+// ✅ Enable "Enter" to submit billing or inventory
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter') {
+    const active = document.activeElement;
+
+    if (document.getElementById('billing_section') && !billing_section.classList.contains('hidden')) {
+      if (active.id === 'prod-code' || active.id === 'prod-qty') {
+        e.preventDefault();
+        addToCart();
+      }
+    }
+
+    if (document.getElementById('inventory_section') && !inventory_section.classList.contains('hidden')) {
+      if (active.id === 'inv-name' || active.id === 'inv-qty') {
+        e.preventDefault();
+        addInventory();
+      }
+    }
+  }
+});
+
