@@ -18,6 +18,17 @@ function showSection(id) {
   document.getElementById(id + '_section').classList.remove('hidden');
 }
 
+function saveSales(cartItems, timestamp) {
+  cartItems.forEach(item => {
+    db.collection("salesLog").add({
+      name: item.name,
+      price: item.price,
+      qty: item.qty,
+      date: timestamp
+    });
+  });
+}
+
 // Inventory
 function addInventory() {
   const n = document.getElementById('inv-name').value.trim();
@@ -26,47 +37,28 @@ function addInventory() {
 
   if (!n || !p || !q) return alert('Fill all fields');
 
-  if (inventory[n]) {
-    inventory[n].price = p;
-    inventory[n].stock += q;
-  } else {
-    inventory[n] = { price: p, stock: q };
-  }
+  const docRef = db.collection("inventory").doc(n);
 
-  saveData();
-  loadInventory();
-  document.getElementById('inv-msg').textContent = 'Inventory updated!';
-
-  // ✅ Clear fields after save
-  document.getElementById('inv-name').value = '';
-  document.getElementById('inv-price').value = '';
-  document.getElementById('inv-qty').value = '';
-  setTimeout(() => document.getElementById('inv-msg').textContent = '', 2000);
+  docRef.get().then(doc => {
+    const data = doc.data() || { price: p, stock: 0 };
+    const newStock = data.stock + q;
+    docRef.set({ price: p, stock: newStock });
+    document.getElementById('inv-msg').textContent = 'Inventory updated!';
+    setTimeout(() => document.getElementById('inv-msg').textContent = '', 2000);
+  });
 }
+
 
 function loadInventory() {
-  if (!inventory || typeof inventory !== 'object') return;
-
-  const tbody = document.querySelector('#inv-table tbody');
-  tbody.innerHTML = '';
-
-  for (let name in inventory) {
-    const { price, stock } = inventory[name];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${name}</td>
-      <td>₹${price}</td>
-      <td>${stock}</td>
-     <td>
-  <button class="action-btn edit-btn" onclick="editInventory('${name}')">✏️ Edit</button>
-  <button class="action-btn delete-btn" onclick="deleteInventory('${name}')">🗑️ Delete</button>
-</td>
-
-    `;
-    tbody.appendChild(tr);
-    if (stock < 10) alert(`Low stock: "${name}" only ${stock} left.`);
-  }
+  db.collection("inventory").onSnapshot((snapshot) => {
+    inventory = {};
+    snapshot.forEach(doc => {
+      inventory[doc.id] = doc.data();
+    });
+    renderInventoryTable();
+  });
 }
+
 
 function editInventory(name) {
   const item = inventory[name];
@@ -200,7 +192,7 @@ function generateBill() {
   const filename = `${cn.replace(/\s+/g, '_')}-${dateFile}.pdf`;
   doc.save(filename);
 
-  salesLog.push(...cart.map(it => ({...it, date: now})));
+saveSales(cart, now);
   cart = [];
   saveData(); renderCart();
 
